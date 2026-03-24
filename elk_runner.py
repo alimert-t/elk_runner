@@ -16,20 +16,26 @@ def stream_process_output(process, log_file):
 
     return process.wait()
 
-def collect_results(work_dir: Path, output_dir: Path):
-    """Move ELK output files from the run directory to the output directory."""
+def collect_results(
+        work_dir: Path, output_dir: Path, save_state: bool = False):
+    """Move Elk output files from the run directory into the output directory."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     moved_files = []
+    copied_files = []
 
     for pattern in ["*.OUT", "*.INFO"]:
         for f_path in work_dir.glob(pattern):
             dest = output_dir / f_path.name
-            shutil.move(str(f_path), str(dest))
-            moved_files.append(f_path.name)
 
-    return moved_files
+            if f_path.name == "STATE.OUT" and save_state:
+                shutil.copy2(str(f_path), str(dest))
+                copied_files.append(f_path.name)
+            else:
+                shutil.move(str(f_path), str(dest))
+                moved_files.append(f_path.name)
 
+    return moved_files, copied_files
 
 def main():
     parser = argparse.ArgumentParser(
@@ -45,6 +51,12 @@ def main():
         "--elk-exec",
         default="/absolute/path/to/elk.sh",
         help="Absolute path to the ELK executable or shell script",
+    )
+
+    parser.add_argument(
+        "--save-state",
+        action="store_true",
+        help="Keep the STATE.OUT in the input dir to use task 1 instead of 0",
     )
 
     args = parser.parse_args()
@@ -126,7 +138,9 @@ def main():
         log_file.write(footer)
         log_file.flush()
 
-    moved_files = collect_results(run_dir, run_output_dir)
+    moved_files, copied_files = collect_results(
+        run_dir, run_output_dir, save_state=args.save_state
+    )
 
     summary = [
         f"Results directory: {run_output_dir}",
@@ -136,8 +150,13 @@ def main():
     if moved_files:
         summary.append("Moved files      :")
         summary.extend(f"  - {name}" for name in moved_files)
-    else:
-        summary.append("Moved files      : none found matching *.OUT or *.INFO")
+
+    if copied_files:
+        summary.append("Copied files     :")
+        summary.extend(f"  - {name}" for name in copied_files)
+
+    if not moved_files and not copied_files:
+        summary.append("Collected files  : none found matching *.OUT or *.INFO")
 
     print("\n" + "\n".join(summary))
     sys.exit(return_code)
