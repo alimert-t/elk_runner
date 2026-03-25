@@ -74,3 +74,7 @@ python elk_runner.py example_two --elk-exec /path/to/elk
 * Output files such as `*.OUT` and `*.INFO` are collected into the matching
   directory under `outputs/`.
 * The full terminal output is both printed live and written to a log file.
+
+## License
+
+This project is licensed under the MIT License.
