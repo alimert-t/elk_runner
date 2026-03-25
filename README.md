@@ -46,6 +46,8 @@ in subsequent runs and is also copied to the corresponding output directory.
 python elk_runner.py <input_name>
 ```
 
+Here, the `<input_name>` is the name of the folder which the respective `elk.in` lives. 
+
 Example:
 
 ```bash
