@@ -90,8 +90,11 @@ def main():
     log_file_path = logs_dir / f"{run_name}.log"
 
     # Remove old result files from the run directory before starting
+    # but keep STATE.OUT! 
     for pattern in ["*.OUT", "*.INFO"]:
         for old_file in run_dir.glob(pattern):
+            if args.save_state and old_file.name == "STATE.OUT":
+                continue
             old_file.unlink()
 
     start_time = datetime.now()
