@@ -120,7 +120,7 @@ def main():
 
     args = parser.parse_args()
 
-    base_dir = Path.cwd()
+    base_dir = Path(__file__).resolve().parent
     input_root = base_dir / "inputs"
     logs_dir = base_dir / "logs"
     output_root = base_dir / "outputs"
