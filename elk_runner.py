@@ -75,14 +75,14 @@ def main():
 
     parser.add_argument(
         "--hosts",
-        required=True,
+        default=None,
         help="Comma-separated host list for MPI, e.g. elk330 or elk330,elk331",
     )
 
     parser.add_argument(
         "--np",
         type=int,
-        required=True,
+        default=None,
         help="Total number of MPI ranks",
     )
 
@@ -167,31 +167,61 @@ def main():
     if args.mpi:
         log_file_path = logs_dir / f"{run_name}_{timestamp}_mpi.log"
         run_output_dir = output_root / run_name / f"{timestamp}_mpi"
+
+    host_list = []
+    num_hosts = 0
+
+    if args.mpi:
+        if not args.hosts:
+            print("Error: --hosts is required when --mpi is used.", file=sys.stderr)
+            sys.exit(1)
+
+        if args.np is None:
+            print("Error: --np is required when --mpi is used.", file=sys.stderr)
+            sys.exit(1)
+
+        host_list = [h.strip() for h in args.hosts.split(",") if h.strip()]
+        num_hosts = len(host_list)
+
+        if num_hosts == 0:
+            print("Error: no valid MPI hosts were provided.", file=sys.stderr)
+            sys.exit(1)
+
+        if args.ppn is not None and args.np > args.ppn * num_hosts:
+            print(
+                f"Error: np={args.np} exceeds ppn * host_count = {args.ppn * num_hosts}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        if args.ppn is not None and args.np % args.ppn != 0:
+            print(
+                f"Warning: np={args.np} is not divisible by ppn={args.ppn}; "
+                "ranks may not be distributed evenly."
+            )
+
+        for host in host_list:
+            check = subprocess.run(
+                ["ssh", "-o", "BatchMode=yes", host, "hostname"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if check.returncode != 0:
+                print(f"Error: passwordless SSH failed for host {host}", file=sys.stderr)
+                print(check.stderr, file=sys.stderr)
+                sys.exit(1)
+
+        # Remove old result files from the run directory before starting
+        # but keep STATE.OUT IF the flag is given. 
+        for pattern in ["*.OUT", "*.INFO"]:
+            for old_file in run_dir.glob(pattern):
+                if args.save_state and old_file.name == "STATE.OUT":
+                    continue
+                old_file.unlink()
     else:
         log_file_path = logs_dir / f"{run_name}_{timestamp}.log"
         run_output_dir = output_root / run_name / f"{timestamp}"
-
-
-    for host in host_list:
-        check = subprocess.run(
-            ["ssh", "-o", "BatchMode=yes", host, "hostname"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        if check.returncode != 0:
-            print(f"Error: passwordless SSH failed for host {host}",
-                    file=sys.stderr)
-            print(check.stderr, file=sys.stderr)
-            sys.exit(1)
-
-    # Remove old result files from the run directory before starting
-    # but keep STATE.OUT! 
-    for pattern in ["*.OUT", "*.INFO"]:
-        for old_file in run_dir.glob(pattern):
-            if args.save_state and old_file.name == "STATE.OUT":
-                continue
-            old_file.unlink()
 
     if args.mpi:
         env = os.environ.copy()
