@@ -129,10 +129,7 @@ def main():
     run_dir = input_root / run_name
     input_file = run_dir / "elk.in"
     elk_exec = Path(args.elk_exec).resolve()
-
-    host_list = [h.strip() for h in args.hosts.split(",") if h.strip()]
-    num_hosts = len(host_list)
-
+    
     if not run_dir.exists():
         print(f"Error: input directory not found: {run_dir}", file=sys.stderr)
         sys.exit(1)
