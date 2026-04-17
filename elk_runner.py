@@ -166,7 +166,7 @@ def main():
 
     if args.mpi:
         log_file_path = logs_dir / f"{run_name}_{timestamp}_mpi.log"
-        run_output_dir = output_root / run_name / f"{timestamp}_mpi"
+        run_output_dir = output_root / f"{run_name}_{timestamp}_mpi"
 
     host_list = []
     num_hosts = 0
@@ -221,7 +221,7 @@ def main():
                 old_file.unlink()
     else:
         log_file_path = logs_dir / f"{run_name}_{timestamp}.log"
-        run_output_dir = output_root / run_name / f"{timestamp}"
+        run_output_dir = output_root / f"{run_name}_{timestamp}_mpi"
 
     if args.mpi:
         env = os.environ.copy()
