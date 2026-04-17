@@ -164,11 +164,12 @@ def main():
     logs_dir.mkdir(parents=True, exist_ok=True)
     output_root.mkdir(parents=True, exist_ok=True)
 
-    run_output_dir = output_root / run_name
     if args.mpi:
         log_file_path = logs_dir / f"{run_name}_{timestamp}_mpi.log"
+        run_output_dir = output_root / run_name / f"{timestamp}_mpi"
     else:
         log_file_path = logs_dir / f"{run_name}_{timestamp}.log"
+        run_output_dir = output_root / run_name / f"{timestamp}"
 
 
     for host in host_list:
