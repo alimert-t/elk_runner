@@ -41,7 +41,19 @@ def collect_results(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run Elk for input/<input_name>/elk.in, log output, and collect results."
+        description="""Run Elk for inputs/<input_name>/elk.in.
+
+      elk_runner.py:
+      - runs Elk inside the chosen input directory
+      - streams output to the terminal
+      - writes the same output to a log file in logs/
+      - collects *.OUT and *.INFO files into outputs/
+
+      MPI Cheat Sheet:
+      - ppn (rank per thread) x omp_thread = num. of physical core per node 
+      - num. of hosts to run x ppn = np (total num. of mpi ranks)
+    """,
+        formatter_class=argparse.RawTextHelpFormatter,
     )
 
     parser.add_argument(
@@ -70,52 +82,52 @@ def main():
     parser.add_argument(
         "--launcher",
         default="mpiexec.hydra",
-        help="MPI launcher command",
+        help="MPI launcher command. [Requires --mpi]",
     )
 
     parser.add_argument(
         "--hosts",
         default=None,
-        help="Comma-separated host list for MPI, e.g. elk330 or elk330,elk331",
+        help="Comma-separated host list for MPI, e.g. node1 or node1,node2,node3",
     )
 
     parser.add_argument(
         "--np",
         type=int,
         default=None,
-        help="Total number of MPI ranks",
+        help="Total number of MPI ranks [Requires --mpi]",
     )
 
     parser.add_argument(
         "--ppn",
         type=int,
         default=None,
-        help="MPI ranks per node",
+        help="MPI ranks per node [Requires --mpi]",
     )
 
     parser.add_argument(
         "--iface",
         default="ib0",
-        help="Network interface for MPI (default: ib0)",
+        help="Network interface for MPI (default: ib0) [Requires --mpi]",
     )
 
     parser.add_argument(
         "--rr",
         action="store_true",
-        help="Enable round-robin rank placement",
+        help="Enable round-robin rank placement [Requires --mpi]",
     )
 
     parser.add_argument(
         "--omp-threads",
         type=int,
         default=1,
-        help="OMP_NUM_THREADS value for each MPI rank",
+        help="OMP_NUM_THREADS value for each MPI rank [Requires --mpi]",
     )
 
     parser.add_argument(
         "--omp-stacksize",
         default="512M",
-        help="OMP_STACKSIZE value",
+        help="OMP_STACKSIZE value [Requires --mpi]",
     )
 
     args = parser.parse_args()
@@ -142,33 +154,19 @@ def main():
         print(f"Error: ELK executable/script not found: {elk_exec}", file=sys.stderr)
         sys.exit(1)
 
-    if args.ppn is not None and args.np > args.ppn * num_hosts:
-        print(
-            f"Error: np={args.np} exceeds ppn * host_count = {args.ppn * num_hosts}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    if args.ppn is not None and args.np % args.ppn != 0:
-        print(
-            f"Warning: np={args.np} is not divisible by ppn={args.ppn}; "
-            "ranks may not be distributed evenly."
-        )
-
     start_time = datetime.now()
     timestamp = start_time.strftime("%Y%m%d_%H-%M-%S")
 
     logs_dir.mkdir(parents=True, exist_ok=True)
     output_root.mkdir(parents=True, exist_ok=True)
 
-    if args.mpi:
-        log_file_path = logs_dir / f"{run_name}_{timestamp}_mpi.log"
-        run_output_dir = output_root / f"{run_name}_{timestamp}_mpi"
-
     host_list = []
     num_hosts = 0
 
     if args.mpi:
+        log_file_path = logs_dir / f"{run_name}_{timestamp}_mpi.log"
+        run_output_dir = output_root / f"{run_name}_{timestamp}_mpi"
+  
         if not args.hosts:
             print("Error: --hosts is required when --mpi is used.", file=sys.stderr)
             sys.exit(1)
@@ -208,17 +206,18 @@ def main():
                 print(f"Error: passwordless SSH failed for host {host}", file=sys.stderr)
                 print(check.stderr, file=sys.stderr)
                 sys.exit(1)
-
-        # Remove old result files from the run directory before starting
-        # but keep STATE.OUT IF the flag is given. 
-        for pattern in ["*.OUT", "*.INFO"]:
-            for old_file in run_dir.glob(pattern):
-                if args.save_state and old_file.name == "STATE.OUT":
-                    continue
-                old_file.unlink()
+ 
     else:
         log_file_path = logs_dir / f"{run_name}_{timestamp}.log"
         run_output_dir = output_root / f"{run_name}_{timestamp}"
+
+    # Remove old result files from the run directory before starting
+    # but keep STATE.OUT IF the flag is given. 
+    for pattern in ["*.OUT", "*.INFO"]:
+        for old_file in run_dir.glob(pattern):
+            if args.save_state and old_file.name == "STATE.OUT":
+                continue
+            old_file.unlink()
 
     if args.mpi:
         env = os.environ.copy()
