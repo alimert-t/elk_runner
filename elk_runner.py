@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 import shutil
@@ -157,11 +158,18 @@ def main():
             "ranks may not be distributed evenly."
         )
 
+    start_time = datetime.now()
+    timestamp = start_time.strftime("%Y%m%d_%H-%M-%S")
+
     logs_dir.mkdir(parents=True, exist_ok=True)
     output_root.mkdir(parents=True, exist_ok=True)
 
     run_output_dir = output_root / run_name
-    log_file_path = logs_dir / f"{run_name}.log"
+    if args.mpi:
+        log_file_path = logs_dir / f"{run_name}_{timestamp}_mpi.log"
+    else:
+        log_file_path = logs_dir / f"{run_name}_{timestamp}.log"
+
 
     for host in host_list:
         check = subprocess.run(
@@ -183,8 +191,6 @@ def main():
             if args.save_state and old_file.name == "STATE.OUT":
                 continue
             old_file.unlink()
-
-    start_time = datetime.now()
 
     if args.mpi:
         env = os.environ.copy()
@@ -319,7 +325,6 @@ def main():
 
     print("\n" + "\n".join(summary))
     sys.exit(return_code)
-
 
 if __name__ == "__main__":
     main()
