@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from .user_config import elk_path
+from user_config import elk_path
 
 def stream_process_output(process, log_file):
     """Print Elk output live and write it to the log file."""
@@ -63,7 +63,7 @@ def main():
 
     parser.add_argument(
         "--mpi",
-        action="store_true"
+        action="store_true",
         help="Run elk with MPI Hydra. Requires elk binary built for MPI.",
     )
 
