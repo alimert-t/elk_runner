@@ -218,7 +218,7 @@ def main():
                 old_file.unlink()
     else:
         log_file_path = logs_dir / f"{run_name}_{timestamp}.log"
-        run_output_dir = output_root / f"{run_name}_{timestamp}_mpi"
+        run_output_dir = output_root / f"{run_name}_{timestamp}"
 
     if args.mpi:
         env = os.environ.copy()
