@@ -75,6 +75,11 @@ python elk_runner.py example_two --elk-exec /path/to/elk
   directory under `outputs/`.
 * The full terminal output is both printed live and written to a log file.
 
+## To-Do:
+
+- [ ] Add email notification option for finished (failed and succeeded) runs.
+    - [ ] Options: gmail via app password or local institutional email for clusters, both via SMTP.
+
 ## License
 
 This project is licensed under the MIT License.
