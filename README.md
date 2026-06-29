@@ -40,6 +40,8 @@ separate `outputs/<input_name>/` directory and writes the terminal output to
 If `--save-state` is used, `STATE.OUT` is kept in the input directory for reuse
 in subsequent runs and is also copied to the corresponding output directory.
 
+***For more and most up-to-date features, check the help with `python elk_runner.py --help`.***
+
 ## Usage
 
 ```bash
