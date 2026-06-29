@@ -74,6 +74,12 @@ def main():
     )
 
     parser.add_argument(
+        "--do-not-move-outputs",
+        action="store_true",
+        help="Keep Elk *.OUT files in the input directory instead of moving them to outputs/",
+    )
+
+    parser.add_argument(
         "--mpi",
         action="store_true",
         help="Run elk with MPI Hydra. Requires elk binary built for MPI.",
@@ -330,25 +336,31 @@ def main():
             log_file.flush()
 
     
-    moved_files, copied_files = collect_results(
-        run_dir, run_output_dir, save_state=args.save_state
-    )
+    if args.do_not_move_outputs:
+        summary = [
+            f"Results kept in : {run_dir}"
+            f"Log file        : {log_file_path}",
+            ]
+    else:
+        moved_files, copied_files = collect_results(
+            run_dir, run_output_dir, save_state=args.save_state
+        )
 
-    summary = [
-        f"Results directory: {run_output_dir}",
-        f"Log file         : {log_file_path}",
-    ]
+        summary = [
+            f"Results directory: {run_output_dir}",
+            f"Log file         : {log_file_path}",
+        ]
 
-    if moved_files:
-        summary.append("Moved files      :")
-        summary.extend(f"  - {name}" for name in moved_files)
+        if moved_files:
+            summary.append("Moved files      :")
+            summary.extend(f"  - {name}" for name in moved_files)
 
-    if copied_files:
-        summary.append("Copied files     :")
-        summary.extend(f"  - {name}" for name in copied_files)
+        if copied_files:
+            summary.append("Copied files     :")
+            summary.extend(f"  - {name}" for name in copied_files)
 
-    if not moved_files and not copied_files:
-        summary.append("Collected files  : none found matching *.OUT or *.INFO")
+        if not moved_files and not copied_files:
+            summary.append("Collected files  : none found matching *.OUT or *.INFO")
 
     print("\n" + "\n".join(summary))
     sys.exit(return_code)
