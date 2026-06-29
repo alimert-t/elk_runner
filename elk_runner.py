@@ -80,6 +80,11 @@ def main():
     )
 
     parser.add_argument(
+        "--keep-old-outputs",
+        action="store_true",
+        help="Do not delete existing *.OUT or *.INFO files before starting the run. Useful for continuation runs.",
+    )
+    parser.add_argument(
         "--mpi",
         action="store_true",
         help="Run elk with MPI Hydra. Requires elk binary built for MPI.",
@@ -218,12 +223,16 @@ def main():
         run_output_dir = output_root / f"{run_name}_{timestamp}"
 
     # Remove old result files from the run directory before starting
-    # but keep STATE.OUT IF the flag is given. 
-    for pattern in ["*.OUT", "*.INFO"]:
-        for old_file in run_dir.glob(pattern):
-            if args.save_state and old_file.name == "STATE.OUT":
-                continue
-            old_file.unlink()
+    # but keep STATE.OUT IF the flag is given.
+    # Unless, the keep flag is given.
+    if args.keep_old_outputs:
+       print("Keeping old *.OUT and *.INFO runs.") 
+    else:
+        for pattern in ["*.OUT", "*.INFO"]:
+            for old_file in run_dir.glob(pattern):
+                if args.save_state and old_file.name == "STATE.OUT":
+                    continue
+                old_file.unlink()
 
     if args.mpi:
         env = os.environ.copy()
